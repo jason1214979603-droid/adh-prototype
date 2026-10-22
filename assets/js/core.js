@@ -95,6 +95,11 @@ ADH.short = function (v) {
   return ADH.num(n, 0);
 };
 ADH.pct = function (v, d) { return (Number(v) * 100).toFixed(d === undefined ? 2 : d) + "%"; };
+ADH.roi = function (roas) { return Number(roas || 0) - 1; };
+ADH.roiHtml = function (roas) {
+  const v = ADH.roi(roas);
+  return '<span class="mono xs" style="color:' + (v >= 0 ? "var(--ok)" : "var(--danger)") + '">' + ADH.pct(v, 1) + "</span>";
+};
 ADH.spendWarn = function (pct) { return pct > 0.5 ? "high" : (pct > 0.2 ? "" : ""); };
 
 /* ---------- 图标 ---------- */

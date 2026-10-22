@@ -459,19 +459,22 @@ table.matrix th.rot{font-size:10.5px}
 
 /* 批量投放 · 对象树列对齐（日预算 / 今日消耗 / 出价 / 状态） */
 .ops-tree-scroll{overflow-x:auto}
-.ops-tree{min-width:840px}
+.ops-tree{min-width:920px}
 .ops-tree .tree-row .nm{flex:1 1 auto;min-width:0;max-width:none;display:flex;flex-direction:column;justify-content:center;line-height:1.25}
 .ops-tree .nm-text{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ops-tree .nm-sub{display:block;font-size:10px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.ops-tree .ops-cols{margin-left:auto;display:flex;align-items:center;flex:0 0 368px}
+.ops-tree .ops-cols{margin-left:auto;display:flex;align-items:center;flex:0 0 460px}
 .ops-tree .ops-col{flex:0 0 auto;text-align:right;white-space:nowrap;font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .ops-tree .ops-col.budget{width:92px}
 .ops-tree .ops-col.spend{width:104px}
+.ops-tree .ops-col.roi{width:92px}
 .ops-tree .ops-col.bid{width:84px}
 .ops-tree .ops-col.status{width:88px}
 .ops-tree .ops-col.muted{color:var(--ink-4)}
+.ops-tree .ops-toggle{flex:0 0 16px;width:16px;height:16px;display:grid;place-items:center;border:0;background:transparent;color:var(--ink-4);padding:0;margin-left:-3px;cursor:pointer}
+.ops-tree .ops-toggle:hover{color:var(--ink)}
 .ops-tree-head{display:flex;align-items:center;padding:6px 8px 6px 28px;border-bottom:1px solid var(--line);margin-bottom:2px;font-size:10px;font-weight:650;color:var(--ink-3);letter-spacing:.02em}
 .ops-tree-head .ops-head-name{flex:1 1 auto}
-.ops-tree-head .ops-cols{margin-left:auto;display:flex;flex:0 0 368px}
+.ops-tree-head .ops-cols{margin-left:auto;display:flex;flex:0 0 460px}
 .ops-tree-head .ops-col{text-align:right;font-size:10px;font-weight:650;color:var(--ink-3)}
 .ops-action-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2)}

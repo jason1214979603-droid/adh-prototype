@@ -2176,6 +2176,15 @@ function accIdx() {
   return id;
 }
 function treeOf() { return D.tree.filter(function (t) { return String(t.accountId) === String(accIdx()); })[0]; }
+function opsAdsetRoas(s) { return 0.85 + (opsHash(s.id + "|roi") % 26) / 10; }
+function opsCampaignRoas(c) {
+  let spend = 0, weighted = 0;
+  c.adsets.forEach(function (s) {
+    const sp = Number(s.spend) || 0;
+    if (s.hasData && sp > 0) { spend += sp; weighted += sp * opsAdsetRoas(s); }
+  });
+  return spend > 0 ? weighted / spend : 0.85 + (opsHash(c.id + "|roi") % 26) / 10;
+}
 function allNodes() {
   const t = treeOf(); const out = [];
   if (!t) return out;
@@ -2192,6 +2201,7 @@ ADH.page("batch-ops", {
     const t = treeOf();
     const sel = ADH.sel("ops");
     const nodes = allNodes();
+    const collapsed = ADH.s().opsCollapsed || {};
     let h = '<div class="card"><div class="tabs">' +
       [["manual", "手动批量投放"], ["auto", "自动批量投放（规则驱动）"]].map(function (x) {
         return '<button class="' + (tab === x[0] ? "on" : "") + '" data-act="tab" data-v="' + x[0] + '">' + x[1] + "</button>";
@@ -2249,7 +2259,7 @@ ADH.page("batch-ops", {
         '<span class="small">已选 <b>' + sel.length + "</b> 个对象</span>" +
         '<button class="btn xs" data-act="sel-all" data-key="ops" data-values="' + nodes.map(function (n) { return n.id; }).join(",") + '">全选 / 取消</button>' +
         '<button class="btn xs" data-act="sel-clear" data-k="ops">清空</button><div style="flex:1"></div>' +
-        '<span class="xs muted">操作同样走异步任务，超 50 个对象强制异步</span></div>';
+        '<span class="xs muted">操作同样走异步任务，超 50 个对象强制异步</span><span class="xs muted" style="margin-left:10px">ROI 统计 Campaign / AdSet</span></div>';
 
       h += '<div class="ops-action-bar mb12">' +
         '<span class="xs muted">可用操作</span>' +
@@ -2258,7 +2268,6 @@ ADH.page("batch-ops", {
         '<button class="btn xs" data-act="ops-run" data-v="BUDGET">批量改预算</button>' +
         '<button class="btn xs" data-act="ops-run" data-v="BID">批量改出价</button>' +
         '<button class="btn xs" data-act="ops-run" data-v="COPY">批量复制</button>' +
-        '<button class="btn xs" data-act="ops-run" data-v="ARCHIVE">批量归档</button>' +
         (ADH.can("asset.delete") ? '<button class="btn xs danger-ghost" data-act="ops-run" data-v="DELETE">批量删除</button>' : '<button class="btn xs disabled" title="批量删除仅 admin 可执行">批量删除</button>') +
         '<div class="grow"></div><span class="xs muted">先勾选对象，再选择操作</span></div>';
 
@@ -2266,28 +2275,36 @@ ADH.page("batch-ops", {
       else {
         h += '<div class="ops-tree-scroll"><div class="tree ops-tree">';
         h += '<div class="ops-tree-head"><span class="ops-head-name">对象</span><span class="ops-cols">' +
-          '<span class="ops-col budget">日预算</span><span class="ops-col spend">今日消耗</span><span class="ops-col bid">出价</span><span class="ops-col status">状态</span></span></div>';
+          '<span class="ops-col budget">日预算</span><span class="ops-col spend">今日消耗</span><span class="ops-col roi" title="ROI 统计 Campaign / AdSet">ROI</span><span class="ops-col bid">出价</span><span class="ops-col status">状态</span></span></div>';
         t.campaigns.forEach(function (c) {
+          const cOpen = !collapsed[c.id];
           h += '<div class="tree-row' + (sel.indexOf(c.id) >= 0 ? " sel" : "") + '" data-act="sel" data-key="ops" data-v="' + c.id + '">' +
             '<input type="checkbox" ' + (sel.indexOf(c.id) >= 0 ? "checked" : "") + ' style="accent-color:var(--brand)" />' +
+            '<button class="ops-toggle" data-act="ops-toggle" data-v="' + c.id + '" title="' + (cOpen ? "折叠" : "展开") + '">' + ADH.icon(cOpen ? "down" : "chevron", 12) + '</button>' +
             '<span class="lvl-chip lvl-CAMPAIGN">CAMPAIGN</span>' +
             '<span class="nm"><span class="nm-text">' + c.name + (c.source === "EXTERNAL" ? " " + ADH.chip("neutral", "外部创建 · 只读") : "") + '</span></span>' +
             '<span class="ops-cols">' +
               '<span class="ops-col budget muted">—</span>' +
               '<span class="ops-col spend mono">' + "$" + ADH.num(c.spend, 2) + '</span>' +
+              '<span class="ops-col roi">' + ADH.roiHtml(opsCampaignRoas(c)) + '</span>' +
               '<span class="ops-col bid muted">—</span>' +
               '<span class="ops-col status">' + ADH.statusChip(c.status) + '</span></span></div>';
+          if (!cOpen) return;
           h += '<div class="tree-children">';
           c.adsets.forEach(function (s) {
+            const sOpen = !collapsed[s.id];
             h += '<div class="tree-row' + (sel.indexOf(s.id) >= 0 ? " sel" : "") + '" data-act="sel" data-key="ops" data-v="' + s.id + '">' +
               '<input type="checkbox" ' + (sel.indexOf(s.id) >= 0 ? "checked" : "") + ' style="accent-color:var(--brand)" />' +
+              '<button class="ops-toggle" data-act="ops-toggle" data-v="' + s.id + '" title="' + (sOpen ? "折叠" : "展开") + '">' + ADH.icon(sOpen ? "down" : "chevron", 12) + '</button>' +
               '<span class="lvl-chip lvl-ADSET">ADSET</span>' +
               '<span class="nm"><span class="nm-text">' + s.name + '</span></span>' +
               '<span class="ops-cols">' +
                 '<span class="ops-col budget">' + "$" + s.budget + '</span>' +
                 '<span class="ops-col spend mono">' + (s.hasData ? "$" + ADH.num(s.spend, 2) : '<span class="muted">—</span>') + '</span>' +
+                '<span class="ops-col roi">' + (s.hasData ? ADH.roiHtml(opsAdsetRoas(s)) : '<span class="muted">—</span>') + '</span>' +
                 '<span class="ops-col bid">' + (s.bid ? "$" + s.bid : "自动") + '</span>' +
                 '<span class="ops-col status">' + ADH.statusChip(s.status) + '</span></span></div>';
+            if (!sOpen) return;
             h += '<div class="tree-children">';
             s.ads.forEach(function (d) {
               h += '<div class="tree-row' + (sel.indexOf(d.id) >= 0 ? " sel" : "") + '" data-act="sel" data-key="ops" data-v="' + d.id + '">' +
@@ -2298,6 +2315,7 @@ ADH.page("batch-ops", {
                 '<span class="ops-cols">' +
                   '<span class="ops-col budget muted">—</span>' +
                   '<span class="ops-col spend mono">' + (d.hasData ? "$" + ADH.num(d.spend, 2) : "—") + '</span>' +
+                  '<span class="ops-col roi muted">—</span>' +
                   '<span class="ops-col bid muted">—</span>' +
                   '<span class="ops-col status">' + ADH.statusChip(d.status) + '</span></span></div>';
             });
@@ -2810,6 +2828,55 @@ ADH.action("ops-result-export", function () {
 });
 
 ADH.action("ops-refresh", function () { ADH.toast("已刷新渠道状态", "ok", "以渠道返回为准回写本地状态（最后写入者以渠道侧为准）"); });
+ADH.action("ops-toggle", function (p) {
+  const s = ADH.s(); s.opsCollapsed = s.opsCollapsed || {};
+  if (s.opsCollapsed[p.v]) delete s.opsCollapsed[p.v]; else s.opsCollapsed[p.v] = true;
+  ADH.render();
+});
+function opsLevelCounts(list) {
+  const c = { CAMPAIGN: 0, ADSET: 0, AD: 0 };
+  list.forEach(function (n) { if (c[n.level] !== undefined) c[n.level]++; });
+  return c;
+}
+function opsLevelText(c) { return "Campaign " + c.CAMPAIGN + " · AdSet " + c.ADSET + " · Ad " + c.AD; }
+function opsLevelsLabel(op) { return OPS_META[op].levels.map(function (l) { return OPS_LVL_CN[l]; }).join(" / "); }
+function opsQuickEligible(op, list) {
+  const meta = OPS_META[op] || OPS_META.PAUSE;
+  return list.filter(function (n) { return meta.levels.indexOf(n.level) >= 0; });
+}
+function opsQuickDefaultAmount(op, list) {
+  const key = op === "BUDGET" ? "budget" : "bid";
+  const vals = list.map(function (n) { return Number(n[key]); }).filter(function (v) { return v > 0; });
+  if (!vals.length) return op === "BUDGET" ? "100.00" : "4.20";
+  return (vals.reduce(function (a, b) { return a + b; }, 0) / vals.length).toFixed(2);
+}
+function opsQuickOpen(op, nodes, eligible) {
+  const meta = OPS_META[op];
+  const counts = opsLevelCounts(eligible);
+  const skipped = nodes.length - eligible.length;
+  let body = ADH.kv([["已选对象", nodes.length + " 个"], ["可执行对象", eligible.length + " 个（" + opsLevelText(counts) + "）"],
+    ["层级限制", skipped ? skipped + " 个对象不在支持层级，将跳过" : "全部对象均支持"]]);
+  if (op === "BUDGET" || op === "BID") {
+    const isBudget = op === "BUDGET";
+    body += '<div class="field mt12"><label>新的' + (isBudget ? "日预算" : "出价") + '（USD）</label>' +
+      '<input id="ops-quick-amount" class="input" type="number" min="0" step="0.01" value="' + opsQuickDefaultAmount(op, eligible) + '" />' +
+      '<div class="xs muted mt4">将统一写入 ' + eligible.length + ' 个' + (isBudget ? " Campaign / AdSet" : " AdSet") + '；确认后立即生效。</div></div>' +
+      ADH.note("info", "直接调整", "不再进入影响预览二级页；操作记录与变更快照仍写入审计日志。");
+  } else if (op === "DELETE") {
+    body += ADH.note("danger", "删除不可逆", "仅 Ad 层级支持删除；删除后不可恢复。本次将删除 " + eligible.length + " 个 Ad。");
+  } else if (op === "COPY") {
+    body += ADH.note("info", "复制说明", "复制对象将按命名规则生成副本，默认暂停，避免重复消耗预算；复制结果可在任务中心查看。");
+  } else {
+    body += ADH.note(op === "ENABLE" ? "warn" : "info", op === "ENABLE" ? "启用后立即生效" : "暂停后停止消耗",
+      op === "ENABLE" ? "启用后对象立即进入投放状态并开始消耗预算，无需二次校验。" : "暂停后停止消耗；可随时重新启用，无需二次校验。");
+  }
+  ADH.modal({
+    title: meta.label,
+    desc: "当前页面直接执行 · 确认后立即生效",
+    body: body,
+    foot: '<button class="btn" data-act="overlay-close">取消</button><div class="grow"></div><button class="btn ' + (op === "DELETE" ? "danger" : "primary") + '" data-act="ops-quick-confirm" data-v="' + op + '">' + (op === "DELETE" ? "确认删除" : op === "COPY" ? "确认复制" : "确认执行") + '</button>'
+  });
+}
 ADH.action("ops-run", function (p) {
   if (!ADH.assertPerm("ops.execute")) return;
   const s = ADH.s(), op = OPS_META[p.v] ? p.v : "PAUSE";
@@ -2817,11 +2884,50 @@ ADH.action("ops-run", function (p) {
     ADH.toast("请先选择对象", "warn", "批量操作需至少选择 1 个对象（FR-MID-21）；也可开启跨账户批量后再选择附加账户。");
     return;
   }
-  s.opsOp = op; s.opsMode = "preview"; s.opsTab = "impact"; s.opsImpactFilt = "";
-  s.opsParamMode = s.opsParamMode || "PCT";
-  if (s.opsParamVal === undefined) s.opsParamVal = 20;
-  s.crumbSub = "影响预览与二次确认 · " + OPS_META[op].label;
-  ADH.render(); window.scrollTo(0, 0);
+  const nodes = opsNodes();
+  const eligible = opsQuickEligible(op, nodes);
+  if (!eligible.length) {
+    ADH.toast("没有可执行对象", "warn", OPS_META[op].label + " 仅支持 " + opsLevelsLabel(op) + " 层级，请重新选择对象。");
+    return;
+  }
+  s.opsOp = op;
+  opsQuickOpen(op, nodes, eligible);
+});
+ADH.action("ops-quick-confirm", function (p) {
+  if (!ADH.assertPerm("ops.execute")) return;
+  const op = OPS_META[p.v] ? p.v : "PAUSE";
+  const nodes = opsNodes(), meta = OPS_META[op];
+  const eligible = opsQuickEligible(op, nodes);
+  let applied = 0;
+  if (op === "ENABLE" || op === "PAUSE") {
+    const after = op === "ENABLE" ? "ACTIVE" : "PAUSED";
+    nodes.forEach(function (n) { n.status = after; applied++; });
+  } else if (op === "BUDGET" || op === "BID") {
+    const el = document.getElementById("ops-quick-amount");
+    const val = el ? Number(el.value) : NaN;
+    if (!isFinite(val) || val <= 0) { ADH.toast("请输入有效金额", "warn", "金额必须为大于 0 的数字。"); return; }
+    eligible.forEach(function (n) {
+      if (op === "BUDGET") n.budget = Math.round(val * 100) / 100;
+      else { n.bid = Math.round(val * 100) / 100; n.bidStrategy = "LOWEST_COST_WITH_BID_CAP"; }
+      applied++;
+    });
+  } else if (op === "DELETE") {
+    const ids = eligible.map(function (n) { return n.id; });
+    D.tree.forEach(function (t) { t.campaigns.forEach(function (c) { c.adsets.forEach(function (s) {
+      const before = s.ads.length;
+      s.ads = s.ads.filter(function (d) { return ids.indexOf(d.id) < 0; });
+      applied += before - s.ads.length;
+    }); }); });
+  } else if (op === "COPY") {
+    applied = nodes.length;
+  }
+  ADH.act("overlay-close", { dataset: {} });
+  const picked = ADH.sel("ops"); picked.splice(0, picked.length);
+  const xacct = ADH.sel("opsXacct"); xacct.splice(0, xacct.length);
+  ADH.s().opsXacct = false;
+  const msg = op === "COPY" ? "复制任务已提交" : meta.label + "已执行";
+  ADH.toast(msg, "ok", op === "COPY" ? "已提交 " + applied + " 个对象的复制任务，可在任务中心查看结果。" : "已处理 " + applied + " 个对象；操作记录已写入审计日志。");
+  ADH.render();
 });
 ADH.action("ops-rollback-demo", function () {
   ADH.toast("回滚边界", "warn", "仅支持删除「本次任务创建、且无投放数据」的对象；已有消耗的对象只能暂停 / 归档，不可删除");

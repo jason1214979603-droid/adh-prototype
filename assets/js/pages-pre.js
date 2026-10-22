@@ -583,7 +583,7 @@ function assetCard(a) {
     '<span class="ratio">' + a.ratio + '</span><span class="kind">' + (a.type === "VIDEO" ? "▶ " + (a.durationMs / 1000).toFixed(0) + "s" : "■ IMG") + "</span>" +
     '<span class="glyph">' + ADH.icon(a.type === "VIDEO" ? "play" : "image", 22) + "</span></div>" +
     '<div class="asset-meta"><div class="an" title="' + ADH.esc(a.name) + '">' + a.name + "</div>" +
-    '<div class="as">' + ADH.chip(st.tone, st.label) + '<span class="num">CTR ' + ADH.pct(a.agg.ctr, 2) + '</span><span class="num">ROAS ' + a.agg.roas.toFixed(2) + "</span></div>" +
+    '<div class="as">' + ADH.chip(st.tone, st.label) + '<span class="num">消耗 $' + (a.agg.spend >= 1000 ? (a.agg.spend / 1000).toFixed(1) + "k" : ADH.num(a.agg.spend, 0)) + '</span><span class="num">ROI ' + Math.round(ADH.roi(a.agg.roas) * 100) + "%</span></div>" +
     '<div class="as xs muted">' + a.id + " · " + a.w + "×" + a.h + " · " + a.sizeMB.toFixed(1) + "MB · 引用 " + a.usedBy + " 条广告</div></div>" +
     '<label class="asset-check check" data-act="sel" data-key="assets" data-v="' + a.id + '"><input type="checkbox" ' + (on ? "checked" : "") + " /></label></div>";
 }
@@ -633,17 +633,17 @@ ADH.page("assets", {
               a.w + "×" + a.h,
               a.type === "VIDEO" ? "视频 · " + (a.durationMs / 1000).toFixed(0) + "s" : "图片",
               ADH.chip(st.tone, st.label),
-              '<span class="mono xs">' + ADH.pct(a.agg.ctr, 2) + "</span>",
-              '<span class="mono xs">' + a.agg.roas.toFixed(2) + "</span>",
+              '<span class="mono xs">$' + ADH.num(a.agg.spend, 2) + "</span>",
+              ADH.roiHtml(a.agg.roas),
               a.usedBy + " 条",
               '<div><span>' + ADH.esc(a.uploadedBy) + '</span><div class="xs muted mono">' + a.uploadedAt + "</div></div>",
               '<button class="btn xs" data-act="asset-detail" data-v="' + a.id + '">详情</button>'
             ],
-            v: [a.id, a.name, a.ratio, a.w + "×" + a.h, a.type, a.status, a.agg.ctr, a.agg.roas, a.usedBy, a.uploadedBy, a.uploadedAt, ""]
+            v: [a.id, a.name, a.ratio, a.w + "×" + a.h, a.type, a.status, a.agg.spend, ADH.roi(a.agg.roas), a.usedBy, a.uploadedBy, a.uploadedAt, ""]
           };
         });
         h += '<div class="card-body">' + (rows.length
-          ? ADH.tbl("tbl-assets", [{ label: "" }, { label: "素材" }, { label: "比例" }, { label: "尺寸" }, { label: "类型" }, { label: "审核状态" }, { label: "CTR", cls: "num" }, { label: "ROAS", cls: "num" }, { label: "引用广告", cls: "num" }, { label: "上传人 / 时间" }, { label: "操作" }], rows, { sortable: true, tight: true })
+          ? ADH.tbl("tbl-assets", [{ label: "" }, { label: "素材" }, { label: "比例" }, { label: "尺寸" }, { label: "类型" }, { label: "审核状态" }, { label: "消耗", cls: "num" }, { label: "ROI", cls: "num" }, { label: "引用广告", cls: "num" }, { label: "上传人 / 时间" }, { label: "操作" }], rows, { sortable: true, tight: true })
           : ADH.empty("无符合条件的素材")) + "</div>";
       } else {
         h += '<div class="card-body"><div class="asset-grid">' + (list.length ? list.map(assetCard).join("") : ADH.empty("无符合条件的素材")) + "</div></div>";

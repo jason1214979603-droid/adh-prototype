@@ -269,18 +269,18 @@ ADH.page("asset-perf", {
 
     h += '<div class="card mb12"><div class="card-head"><h3>' + ADH.icon("trend", 15) + '素材效果排行<span class="desc">BR-126 剔除样本量不足并标注样本量</span></h3>' +
       '<div class="right"><div class="seg"><button class="on">按 ROAS</button><button data-act="ap-sort" data-v="ctr">按 CTR</button><button data-act="ap-sort" data-v="cvr">按 CVR</button></div></div></div>' +
-      ADH.tbl("tbl-ap", [{ label: "素材" }, { label: "消耗", cls: "num" }, { label: "曝光", cls: "num" }, { label: "样本量" }, { label: "CTR", cls: "num" }, { label: "CVR", cls: "num" }, { label: "ROAS", cls: "num" }, { label: "生命周期" }, { label: "" }],
+      ADH.tbl("tbl-ap", [{ label: "素材" }, { label: "消耗", cls: "num" }, { label: "ROI", cls: "num" }, { label: "曝光", cls: "num" }, { label: "样本量" }, { label: "CTR", cls: "num" }, { label: "CVR", cls: "num" }, { label: "ROAS", cls: "num" }, { label: "生命周期" }, { label: "" }],
         ranked.map(function (a) {
           const low = a.agg.impressions < 30000;
           const cvr = a.agg.conversions / (a.agg.clicks || 1);
           return {
             c: ['<b>' + a.name + '</b><div class="xs muted mono">' + a.id + " · " + a.type + " · " + a.ratio + " · " + a.tags.join("/") + "</div>",
-              ADH.num(a.agg.spend, 2), ADH.short(a.agg.impressions),
+              ADH.num(a.agg.spend, 2), ADH.roiHtml(a.agg.roas), ADH.short(a.agg.impressions),
               low ? ADH.chip("warn", "样本不足 · 已折叠") : ADH.chip("ok", "样本充足"),
               ADH.pct(a.agg.ctr, 2), ADH.pct(cvr, 2), a.agg.roas.toFixed(2),
               a.durability === "萎靡" ? ADH.chip("danger", "衰退") : (a.durability === "爬坡" ? ADH.chip("info", "爬坡") : ADH.chip("ok", "稳定")),
               '<button class="btn xs" data-act="ap-detail" data-v="' + a.id + '">详情</button>'],
-            v: [a.name, a.agg.spend, a.agg.impressions, low ? 0 : 1, a.agg.ctr, cvr, a.agg.roas, a.durability, ""]
+            v: [a.name, a.agg.spend, ADH.roi(a.agg.roas), a.agg.impressions, low ? 0 : 1, a.agg.ctr, cvr, a.agg.roas, a.durability, ""]
           };
         }), { sortable: true, pageSize: 10, zebra: true }) + "</div>";
 
