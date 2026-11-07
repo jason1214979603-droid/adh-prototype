@@ -64,7 +64,6 @@ const ADH_NAV = [
   { group: "投放后", items: [
     { id: "dashboard",  title: "数据看板",   icon: "chart", perm: "dashboard.view" },
     { id: "budget",     title: "预算分配",   icon: "pie", perm: "dashboard.view" },
-    { id: "bidding",    title: "出价与成本达成", icon: "target", perm: "dashboard.view" },
     { id: "asset-perf", title: "素材效果",   icon: "trend", perm: "asset.perf" },
     { id: "attr-detail",title: "归因明细与对账", icon: "flow", perm: "attr.view" },
     { id: "exports",    title: "报表导出",   icon: "download", perm: "dashboard.export" }
